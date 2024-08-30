@@ -40,6 +40,7 @@ interface MoviesApi {
     @GET("movie/{movieId}")
     suspend fun getMovieDetails(
         @Path("movieId") movieId: Int,
+        @Query("language") language: String = "en-US",
     ): ApiResult<MovieDetails, ErrorResponse>
 
 }

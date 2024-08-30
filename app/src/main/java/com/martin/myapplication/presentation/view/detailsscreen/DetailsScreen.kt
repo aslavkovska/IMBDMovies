@@ -1,6 +1,7 @@
 package com.martin.myapplication.presentation.view.detailsscreen
 
-import android.graphics.Movie
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,12 +24,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,22 +49,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.martin.myapplication.R
-import com.martin.myapplication.data.remote.api.MoviesApi
-import com.martin.myapplication.data.remote.model.MovieDetails
-import com.martin.myapplication.data.remote.repository.MovieDetailsRepository
+import com.martin.myapplication.presentation.state.DetailsUiState
 import com.martin.myapplication.presentation.ui.theme.BackgroundColor
 import com.martin.myapplication.presentation.view.homescreen.MoviePosterImage
-import com.martin.myapplication.presentation.view.searchscreen.Movietmp
-import com.martin.myapplication.presentation.view.searchscreen.movieList
-import com.martin.myapplication.presentation.viewmodel.DetailsViewModel
-import com.martin.myapplication.presentation.viewmodel.HomeViewModel
-import com.slack.eithernet.ApiResult
+import com.martin.myapplication.presentation.viewmodel.MovieDetailsViewModel
+import androidx.compose.runtime.State
+import com.martin.myapplication.domain.model.MovieDetailsModel
 
 data class Review(
     val imageId: Int,
@@ -107,14 +101,32 @@ val castList = listOf(
 )
 
 @Composable
-fun DetailsScreen(movieId: Int?){
+fun MovieDetailsPage(id: Int) {
+    val movieDetailsViewModel: MovieDetailsViewModel = hiltViewModel()
+
+//    movieDetailsViewModel.fetchMovieDetails(id)
+
+    val movieDetailsState = movieDetailsViewModel.state.collectAsState()
+
+    LaunchedEffect(id) {
+        Log.d("LaunchedEffect", "Triggered for movieId: $id")
+        movieDetailsViewModel.fetchMovieDetails(id)
+        Log.d("LaunchedEffect", "MovieDetailsPage2 for movieId: $id")
+    }
+    Log.d("MovieDetailsPage", "MovieDetailsPage for movieId: $id and state $movieDetailsState")
+
+    DetailsScreen(movieDetailsState)
+}
+
+@Composable
+fun DetailsScreen(state: State<DetailsUiState>){
 //    val navController = rememberNavController()
 //
 //    navController.navigate("details/$movieId")
 
 
-    val detailsViewModel = hiltViewModel<DetailsViewModel>()
-    val stateMovie by detailsViewModel.stateMovie.collectAsState()
+//    val movieDetailsViewModel = hiltViewModel<MovieDetailsViewModel>()
+//    val stateMovie by movieDetailsViewModel.stateMovie.collectAsState()
 
     Box(
         modifier = Modifier
@@ -135,42 +147,23 @@ fun DetailsScreen(movieId: Int?){
 
                 TopDetailsBar()
 
-                when (stateMovie) {
-                    is ApiResult.Success -> {
-                        val movie = (stateMovie as ApiResult.Success<MovieDetails>).value
-                        TopMovieCard(movie)
+                TopMovieCard(state)
 
-                        DetailsLine(movie)
+                DetailsLine(state)
 
-                        DetailsBar()
+                DetailsBar()
 
-                        AboutMovie(movie)
+                AboutMovie(state)
 
-                    }
-                    is ApiResult.Failure -> {
-                        Text(
-                            text = "Error: ${stateMovie}",
-                            color = Color.Red,
-                            modifier = Modifier
-                                .padding(16.dp)
-                        )
-                    }
-                    null -> {
-                        Text(
-                            text = "No data available for chosen Movie",
-                            modifier = Modifier
-                                .padding(16.dp)
-                        )
-                    }
-                }
+            }
+
+        }
 
 //                AboutMovie()
 
 //                ReviewsGrid()
 
 //                CastGrid(castList)
-            }
-        }
     }
 }
 
@@ -246,7 +239,7 @@ fun TopBarPreview() {
 }
 
 @Composable
-fun TopMovieCard(movie: MovieDetails){
+fun TopMovieCard(state: State<DetailsUiState>){
     Box(modifier = Modifier
         .height(271.dp)
         .fillMaxWidth()
@@ -256,7 +249,7 @@ fun TopMovieCard(movie: MovieDetails){
             .fillMaxWidth()
         ){
             MoviePosterImage(
-                posterPath = movie.belongsToCollection.backdropPath,
+                posterPath = state.value.movieDetails?.posterPath.toString(),
                 modifier = Modifier
                     .height(250.dp)
                     .fillMaxWidth()
@@ -279,7 +272,7 @@ fun TopMovieCard(movie: MovieDetails){
                         tint = Color(0xFFFF8700)
                     )
                     Text(
-                        text = "${movie.voteAverage}",
+                        text = "${state.value.movieDetails?.voteAverage}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 12.sp,
                         color = Color(0xFFFF8700),
@@ -292,7 +285,7 @@ fun TopMovieCard(movie: MovieDetails){
             .align(Alignment.BottomStart)
             .padding(start = 29.dp)){
             MoviePosterImage(
-                posterPath = movie.posterPath,
+                posterPath = state.value.movieDetails?.posterPath.toString(),
                 modifier = Modifier
                     .width(95.dp)
                     .height(120.dp)
@@ -303,7 +296,7 @@ fun TopMovieCard(movie: MovieDetails){
             .align(Alignment.BottomStart)
             .padding(start = 130.dp, bottom = 25.dp)){
             Text(
-                text = movie.title,
+                text = state.value.movieDetails?.title.toString(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 18.sp,
                 color = Color.White,
@@ -321,7 +314,7 @@ fun TopMovieCard(movie: MovieDetails){
 //}
 
 @Composable
-fun DetailsLine(movie: MovieDetails) {
+fun DetailsLine(state: State<DetailsUiState>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -334,7 +327,7 @@ fun DetailsLine(movie: MovieDetails) {
         ) {
             DetailsLineItem(
                 iconRes = R.drawable.year,
-                text = " ${movie.releaseDate}"
+                text = " ${state.value.movieDetails?.releaseDate}"
             )
             Text(
                 text = "|",
@@ -344,7 +337,7 @@ fun DetailsLine(movie: MovieDetails) {
             )
             DetailsLineItem(
                 iconRes = R.drawable.duration,
-                text = " ${movie.runtime} minutes"
+                text = " ${state.value.movieDetails?.runtime} minutes"
             )
             Text(
                 text = "|",
@@ -354,7 +347,7 @@ fun DetailsLine(movie: MovieDetails) {
             )
             DetailsLineItem(
                 iconRes = R.drawable.genre,
-                text = movie.genres.joinToString(separator = ", ")
+                text = state.value.movieDetails!!.genres.joinToString(separator = ", ")
             )
         }
     }
@@ -442,12 +435,12 @@ fun DetailsBarPreview() {
 }
 
 @Composable
-fun AboutMovie(movie: MovieDetails){
+fun AboutMovie(state: State<DetailsUiState>){
     Box(modifier = Modifier
         .width(317.dp)
         .padding(top = 18.dp, bottom = 80.dp)){
         Text(
-            text = "${movie.overview}",
+            text = "${state.value.movieDetails?.overview.toString()}",
             color = Color.White
         )
     }

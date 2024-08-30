@@ -10,8 +10,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.martin.myapplication.presentation.ui.theme.MyApplicationTheme
+import com.martin.myapplication.presentation.view.MainScreen
 import com.martin.myapplication.presentation.view.detailsscreen.DetailsScreen
-import com.martin.myapplication.presentation.view.homescreen.BottomNav
 import com.martin.myapplication.presentation.view.homescreen.HomeScreenPage
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,12 +26,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(),
-                    bottomBar = { BottomNav() }
+//                    bottomBar = { BottomNav() }
                 ) {
-                    HomeScreenPage()
-//                    DetailsScreen(movieId = 533535)
-//                    val movieId : Int = 533535
-//                    navController.navigate("details_screen?movieId=$movieId")
+                    MainScreen()
+//                    HomeScreenPage()
                 }
             }
         }

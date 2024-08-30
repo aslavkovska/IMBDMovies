@@ -1,5 +1,6 @@
 package com.martin.myapplication.presentation.view.homescreen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,6 @@ import com.martin.myapplication.presentation.ui.theme.BackgroundColor
 import com.martin.myapplication.presentation.view.searchscreen.SearchScreen
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
-import com.martin.myapplication.presentation.view.homescreen.BottomNavItem.Companion.items
 import com.martin.myapplication.presentation.view.searchscreen.WatchListScreen
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -76,16 +76,17 @@ import com.martin.myapplication.data.remote.model.Result
 import com.martin.myapplication.data.remote.model.TopRatedMovies
 import com.martin.myapplication.data.remote.model.UpcomingMovies
 import com.martin.myapplication.presentation.view.detailsscreen.DetailsScreen
+import com.martin.myapplication.presentation.view.detailsscreen.MovieDetailsPage
 import com.martin.myapplication.presentation.viewmodel.HomeViewModel
 import com.slack.eithernet.ApiResult
 
-@Composable
-fun HomeScreen() {
-    HomeScreenPage()
-}
+//@Composable
+//fun HomeScreen() {
+//    HomeScreenPage()
+//}
 
 @Composable
-fun HomeScreenPage() {
+fun HomeScreenPage(goToDetails: (Int) -> Unit) {
     val homeViewModel = hiltViewModel<HomeViewModel>()
     val stateTopRated by homeViewModel.stateTopRated.collectAsState()
     val stateUpcoming by homeViewModel.stateUpcoming.collectAsState()
@@ -149,7 +150,10 @@ fun HomeScreenPage() {
                                     is NowPlayingMovies -> response.results
                                     else -> emptyList()
                                 }
-                                    MoviesGrid(movies = movies)
+                                    MoviesGrid(movies = movies){ movieId ->
+                                        Log.d("HomeScreenPage", "Navigating to details for movieId: $movieId")
+                                        goToDetails(movieId)
+                                    }
                             }
                             is ApiResult.Failure -> {
                                 Text(
@@ -379,37 +383,39 @@ fun NavBarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun MovieCardBottom(
-    posterPath: String,
-    movieId: Int,
-    modifier: Modifier = Modifier
-) {
-    val navController = rememberNavController()
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        modifier = modifier
-            .background(color = BackgroundColor)
-            .clickable {
-                navController.navigate("details/$movieId")
-            }
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .background(color = BackgroundColor)
-                .width(100.dp)
-        ) {
-            MoviePosterImage(
-                posterPath = posterPath,
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(146.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-        }
-    }
-}
+//@Composable
+//fun MovieCardBottom(
+//    posterPath: String,
+//    movieId: Int,
+//    modifier: Modifier = Modifier,
+//    onClick: (Int) -> Unit,
+//) {
+////    val navController = rememberNavController()
+//    Surface(
+//        shape = MaterialTheme.shapes.medium,
+//        modifier = modifier
+//            .background(color = BackgroundColor)
+//            .clickable {
+//                onClick(movieId)
+////                navController.navigate("details/$movieId")
+//            }
+//    ) {
+//        Row(
+//            horizontalArrangement = Arrangement.Center,
+//            modifier = Modifier
+//                .background(color = BackgroundColor)
+//                .width(100.dp)
+//        ) {
+//            MoviePosterImage(
+//                posterPath = posterPath,
+//                modifier = Modifier
+//                    .width(100.dp)
+//                    .height(146.dp)
+//                    .clip(RoundedCornerShape(10.dp))
+//            )
+//        }
+//    }
+//}
 
 
 //@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
@@ -420,16 +426,18 @@ fun MovieCardBottom(
 //    )
 //}
 
+
 @Composable
 fun MoviesGrid(
     movies: List<Result>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (Int) -> Unit,
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
     ) {
-        Column (
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
@@ -445,119 +453,35 @@ fun MoviesGrid(
                     .fillMaxWidth()
             ) {
                 items(movies) { movie ->
-                    MovieCardBottom(posterPath = movie.posterPath,
-                        movieId = movie.id)
-                }
-            }
-        }
-    }
-}
-
-sealed class BottomNavItem(val route: String, val iconid: Int, val label: String) {
-    object Home : BottomNavItem("home", R.drawable.home, "Home")
-    object Search : BottomNavItem("search", R.drawable.search, "Search")
-    object WatchList : BottomNavItem("watchlist", R.drawable.watchlist, "Watch List")
-    companion object {
-        val items = listOf(Home, Search, WatchList)
-    }
-}
-
-@Composable
-fun BottomNav() {
-    val navController:NavHostController = rememberNavController()
-    Scaffold(
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .background(color = Color(0xFF0296E5))
-                    .height(80.dp)
-            ) {
-                BottomAppBar(
-                    backgroundColor = BackgroundColor,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .height(78.dp)
-                ) {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentRoute = navBackStackEntry?.destination?.route
-
-                    items.forEach { item ->
-                        NavigationBarItem(
-                            selected = currentRoute == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = item.iconid),
-                                    contentDescription = stringResource(id = item.iconid),
-                                )
-                            },
-                            label = { Text(text = item.label, color = if (currentRoute == item.route) Color(0xFF0296E5) else Color(0xFF67686D)) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color(0xFF0296E5),
-                                unselectedIconColor = Color(0xFF67686D),
-                                indicatorColor = Color.Transparent
-                            ),
-                        )
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier
+                            .background(color = BackgroundColor)
+                            .clickable { onClick(movie.id) }
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .background(color = BackgroundColor)
+                                .width(100.dp)
+                        ) {
+                            MoviePosterImage(
+                                posterPath = movie.posterPath,
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .height(146.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                            )
+                        }
                     }
                 }
             }
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Home.route,
-            Modifier.padding(innerPadding)
-        ) {
-            composable(BottomNavItem.Home.route) {
-                HomeScreen()
-            }
-            composable(BottomNavItem.Search.route) { SearchScreen() }
-            composable(BottomNavItem.WatchList.route) { WatchListScreen() }
-            composable(
-                "details/{movieId}",
-                arguments = listOf(navArgument("movieId") { type = NavType.IntType })
-            ) { backStackEntry ->
-                val movieId = backStackEntry.arguments?.getInt("movieId") ?: 0
-                DetailsScreen(movieId = movieId)
-            }
-//            composable(
-//                "details/{movieId}",
-//                deepLinks = listOf(navDeepLink { uriPattern = "android-app://com.martin.myapplication/details/{movieId}" })
-//            ) { backStackEntry ->
-//                val movieId = backStackEntry.arguments?.getString("movieId")?.toInt()
-//                DetailsScreen(movieId)
-//            }
-//            composable(
-//                route = "details/{movieId}",
-//                arguments = listOf(
-//                    navArgument("movieId") {
-//                        type = NavType.IntType
-//                        defaultValue = -1
-//                    }
-//                ),
-//                deepLinks = listOf(navDeepLink { uriPattern = "android-app://com.martin.myapplication/details/{movieId}" })
-//            ) {
-//                val movieId = navController.currentBackStackEntry?.arguments?.getInt("movieId") ?: -1
-//                DetailsScreen(movieId = movieId)
-//            }
-        }
     }
 }
 
-//@Preview
-//@Composable
-//fun HomeScreenPreview() {
-////    val navController = rememberNavController()
-//    HomeScreen()
-//}
+
+
 
 
 

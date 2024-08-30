@@ -9,12 +9,12 @@ import javax.inject.Inject
 
 class MovieDetailsRepository @Inject constructor(private val moviesApi: MoviesApi) {
     suspend fun getMovieDetails(movieId: Int): ApiResult<MovieDetails, ErrorResponse> {
-        val result = moviesApi.getMovieDetails(movieId = movieId)
+        val result = moviesApi.getMovieDetails(movieId)
 
         when (result) {
             is ApiResult.Success -> {
-                val movie = result.value.title
-                println("Fetched Top Rated Movies: $movie")
+                val movieDetails = result.value
+                println("Fetched Top Rated Movies: $movieDetails")
             }
 
             is ApiResult.Failure -> {
