@@ -10,5 +10,6 @@ data class MovieDetailsModel (
     val releaseDate: String,
     val title: String,
     val voteAverage: Double,
-    val runtime: Int
+    val runtime: Int,
+    val backdropPath: String,
 )

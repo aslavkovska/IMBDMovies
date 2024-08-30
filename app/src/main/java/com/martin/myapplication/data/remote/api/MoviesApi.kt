@@ -3,6 +3,7 @@ package com.martin.myapplication.data.remote.api
 
 import com.martin.myapplication.data.remote.model.ErrorResponse
 import com.martin.myapplication.data.remote.model.MovieDetails
+import com.martin.myapplication.data.remote.model.MovieReviews
 import com.martin.myapplication.data.remote.model.NowPlayingMovies
 import com.martin.myapplication.data.remote.model.PopularMovies
 import com.martin.myapplication.data.remote.model.TopRatedMovies
@@ -42,5 +43,12 @@ interface MoviesApi {
         @Path("movieId") movieId: Int,
         @Query("language") language: String = "en-US",
     ): ApiResult<MovieDetails, ErrorResponse>
+
+    @GET("movie/{movie_id}/reviews")
+    suspend fun getMovieReviews(
+        @Path("movie_id") id: Int,
+        @Query("language") language: String = "en-US",
+        @Query("page") page: Int = 1,
+    ): ApiResult<MovieReviews, ErrorResponse>
 
 }

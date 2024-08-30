@@ -1,7 +1,5 @@
 package com.martin.myapplication.presentation.view.detailsscreen
 
-import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +42,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,7 +51,7 @@ import com.martin.myapplication.presentation.ui.theme.BackgroundColor
 import com.martin.myapplication.presentation.view.homescreen.MoviePosterImage
 import com.martin.myapplication.presentation.viewmodel.MovieDetailsViewModel
 import androidx.compose.runtime.State
-import com.martin.myapplication.domain.model.MovieDetailsModel
+import com.martin.myapplication.data.remote.model.MovieReviews.AuthorDetails
 
 data class Review(
     val imageId: Int,
@@ -101,32 +97,20 @@ val castList = listOf(
 )
 
 @Composable
-fun MovieDetailsPage(id: Int) {
+fun MovieDetailsPage(goBack: () -> Unit, id: Int) {
     val movieDetailsViewModel: MovieDetailsViewModel = hiltViewModel()
-
-//    movieDetailsViewModel.fetchMovieDetails(id)
-
     val movieDetailsState = movieDetailsViewModel.state.collectAsState()
 
     LaunchedEffect(id) {
-        Log.d("LaunchedEffect", "Triggered for movieId: $id")
         movieDetailsViewModel.fetchMovieDetails(id)
-        Log.d("LaunchedEffect", "MovieDetailsPage2 for movieId: $id")
     }
-    Log.d("MovieDetailsPage", "MovieDetailsPage for movieId: $id and state $movieDetailsState")
 
-    DetailsScreen(movieDetailsState)
+    DetailsScreen(goBack, movieDetailsState)
 }
 
 @Composable
-fun DetailsScreen(state: State<DetailsUiState>){
-//    val navController = rememberNavController()
-//
-//    navController.navigate("details/$movieId")
-
-
-//    val movieDetailsViewModel = hiltViewModel<MovieDetailsViewModel>()
-//    val stateMovie by movieDetailsViewModel.stateMovie.collectAsState()
+fun DetailsScreen(goBack: () -> Unit, state: State<DetailsUiState>){
+    var selectedIndex by remember { mutableStateOf(0) }
 
     Box(
         modifier = Modifier
@@ -145,37 +129,27 @@ fun DetailsScreen(state: State<DetailsUiState>){
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TopDetailsBar()
+                TopDetailsBar(goBack)
 
                 TopMovieCard(state)
 
                 DetailsLine(state)
 
-                DetailsBar()
+                DetailsNavBar(selectedIndex = selectedIndex,
+                    onSelectedIndexChanged = { index -> selectedIndex = index })
 
-                AboutMovie(state)
-
+                if(selectedIndex == 0)
+                    AboutMovie(state)
+                else if(selectedIndex == 1)
+                    ReviewsGrid(state)
+                else if(selectedIndex == 2)
+                    CastGrid(castList)
+                else
+                    AboutMovie(state)
             }
-
         }
-
-//                AboutMovie()
-
-//                ReviewsGrid()
-
-//                CastGrid(castList)
     }
 }
-
-//@Composable
-//fun BottomDetails(index: Int){
-//    if(index == 0){
-//        AboutMovie()
-//    }
-//    else if (index == 1){
-//        ReviewsGrid()
-//    }
-//}
 
 //@Preview
 //@Composable
@@ -184,7 +158,7 @@ fun DetailsScreen(state: State<DetailsUiState>){
 //}
 
 @Composable
-fun TopDetailsBar() {
+fun TopDetailsBar(goBack: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(24.dp)
@@ -200,7 +174,7 @@ fun TopDetailsBar() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { },
+                onClick = { goBack()},
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.arrow_left),
@@ -232,11 +206,11 @@ fun TopDetailsBar() {
     }
 }
 
-@Preview
-@Composable
-fun TopBarPreview() {
-    TopDetailsBar()
-}
+//@Preview
+//@Composable
+//fun TopBarPreview() {
+//    TopDetailsBar()
+//}
 
 @Composable
 fun TopMovieCard(state: State<DetailsUiState>){
@@ -249,7 +223,7 @@ fun TopMovieCard(state: State<DetailsUiState>){
             .fillMaxWidth()
         ){
             MoviePosterImage(
-                posterPath = state.value.movieDetails?.posterPath.toString(),
+                posterPath = state.value.movieDetails?.backdropPath.toString() ?: state.value.movieDetails?.posterPath.toString(),
                 modifier = Modifier
                     .height(250.dp)
                     .fillMaxWidth()
@@ -327,7 +301,7 @@ fun DetailsLine(state: State<DetailsUiState>) {
         ) {
             DetailsLineItem(
                 iconRes = R.drawable.year,
-                text = " ${state.value.movieDetails?.releaseDate}"
+                text = state.value.movieDetails?.releaseDate?.take(4) ?: ""
             )
             Text(
                 text = "|",
@@ -347,8 +321,7 @@ fun DetailsLine(state: State<DetailsUiState>) {
             )
             DetailsLineItem(
                 iconRes = R.drawable.genre,
-                text = state.value.movieDetails!!.genres.joinToString(separator = ", ")
-            )
+                text = state.value.movieDetails?.genres?.joinToString(separator = ", ") { it.name }  ?: ""            )
         }
     }
 }
@@ -382,8 +355,8 @@ fun DetailsLineItem(iconRes: Int, text: String) {
 //}
 
 @Composable
-fun DetailsBar(){
-    var selectedIndex by remember { mutableStateOf(0) }
+fun DetailsNavBar(selectedIndex: Int,
+                  onSelectedIndexChanged: (Int) -> Unit){
 
     Row(
         modifier = Modifier
@@ -398,7 +371,7 @@ fun DetailsBar(){
             NavBarItem(
                 label = tab,
                 isSelected = selectedIndex == index,
-                onClick = { selectedIndex = index }
+                onClick = { onSelectedIndexChanged(index) }
             )
         }
     }
@@ -428,17 +401,17 @@ fun NavBarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Preview
-@Composable
-fun DetailsBarPreview() {
-    DetailsBar()
-}
+//@Preview
+//@Composable
+//fun DetailsBarPreview() {
+//    DetailsBar()
+//}
 
 @Composable
 fun AboutMovie(state: State<DetailsUiState>){
     Box(modifier = Modifier
         .width(317.dp)
-        .padding(top = 18.dp, bottom = 80.dp)){
+        .padding(top = 18.dp, bottom = 10.dp)){
         Text(
             text = "${state.value.movieDetails?.overview.toString()}",
             color = Color.White
@@ -514,7 +487,9 @@ fun AboutMovie(state: State<DetailsUiState>){
 
 @Composable
 fun ReviewItem(
-    review: Review,
+    authorDetails: AuthorDetails,
+    content: String,
+    author: String,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -525,47 +500,62 @@ fun ReviewItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .background(color = BackgroundColor)
-                .padding(8.dp) // Adding padding to avoid text touching the edges
+                .padding(8.dp)
         ) {
-            Box(modifier = Modifier.width(44.dp)) {
-                Image(
-                    painter = painterResource(review.imageId),
+            Box(modifier = Modifier
+                .width(44.dp)
+                .align(alignment = Alignment.Top)) {
+                if(authorDetails.avatarPath != null){
+                    MoviePosterImage(
+                        posterPath = authorDetails.avatarPath.toString(),
+                        modifier = Modifier
+                            .width(44.dp)
+                            .height(44.dp)
+                            .clip(CircleShape)
+                    )
+                }
+                else{
+                    Image(
+                    painter = painterResource(R.drawable.reviewperson),
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier
                         .width(44.dp)
                         .height(44.dp)
                         .clip(CircleShape)
-                )
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .align(alignment = Alignment.BottomCenter)
                         .padding(top = 44.dp)
                 ) {
-                    Text(
-                        text = "${review.grade}",
-                        fontSize = 12.sp,
-                        color = Color(0xFF0296E5),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if(authorDetails.rating != null){
+                        Text(
+                            text = authorDetails.rating.toString()?: "",
+                            fontSize = 12.sp,
+                            color = Color(0xFF0296E5),
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-                Spacer(modifier = Modifier.width(8.dp)) // Space between image and text
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 4.dp)
                 ) {
                     Text(
-                        text = "${review.name}",
+                        text = author,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     Text(
-                        text = "${review.description}",
+                        text = content,
                         fontSize = 12.sp,
                         color = Color.White,
                     )
@@ -576,22 +566,22 @@ fun ReviewItem(
 
 
 
-@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
-@Composable
-fun ReviewItemPreview() {
-    ReviewItem(
-        review = reviewsList.get(0),
-    )
-}
+//@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
+//@Composable
+//fun ReviewItemPreview() {
+//    ReviewItem(
+//        review = reviewsList.get(0),
+//    )
+//}
 
 @Composable
 fun ReviewsGrid(
+    state: State<DetailsUiState>,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(bottom = 80.dp)
     ) {
         Column (
             modifier = Modifier
@@ -605,20 +595,27 @@ fun ReviewsGrid(
                 modifier = Modifier
                     .background(color = Color(0x242A32))
                     .height(650.dp)
+                    .padding(bottom = 10.dp)
             ) {
-                items(reviewsList) { item ->
-                    ReviewItem(review = item)
+
+                state.value.movieReviews?.let {
+                    items(it.results) { item ->
+                        ReviewItem(authorDetails = item.authorDetails, content = item.content, author = item.author?:"")
+                    }
                 }
+//                items(state.value.movieReviews.results) { item ->
+//                    ReviewItem(authorDetails = item.authorDetails, content = item.content)
+//                }
             }
         }
     }
 }
 
-@Preview
-@Composable
-fun ReviewsGridPreview() {
-    ReviewsGrid()
-}
+//@Preview
+//@Composable
+//fun ReviewsGridPreview() {
+//    ReviewsGrid()
+//}
 
 @Composable
 fun CastItem(cast: Cast) {
@@ -658,11 +655,11 @@ fun CastItem(cast: Cast) {
 
 @Composable
 fun CastGrid(castItems: List<Cast>) {
-    Box(modifier = Modifier.padding(bottom = 80.dp)){
+    Box(modifier = Modifier){
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(castItems) { cast ->

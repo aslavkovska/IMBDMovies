@@ -8,6 +8,7 @@ import com.martin.myapplication.data.remote.model.ErrorResponse
 import com.martin.myapplication.data.remote.model.MovieDetails
 import com.martin.myapplication.data.remote.repository.MovieDetailsRepository
 import com.martin.myapplication.domain.usecase.MovieDetailsUseCase
+import com.martin.myapplication.domain.usecase.MovieReviewsUseCase
 import com.martin.myapplication.presentation.state.DetailsUiState
 import com.slack.eithernet.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
-    private val getMovieDetails: MovieDetailsUseCase
+    private val getMovieDetails: MovieDetailsUseCase,
+    private val getMovieReviews: MovieReviewsUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DetailsUiState())
@@ -45,10 +47,24 @@ class MovieDetailsViewModel @Inject constructor(
                     }
                 }
             }
+
+            getMovieReviews(id).collect { result ->
+                _state.update { uiState ->
+                    when(result){
+                        is ApiResult.Success -> uiState.copy(
+                            movieReviews = result.value,
+                            error = "",
+                        )
+                        is ApiResult.Failure -> uiState.copy(
+                            movieReviews = null,
+                            error = ""
+                        )
+                    }
+                }
+            }
             _state.update { uiState ->
                 uiState.copy(isLoading = false)
             }
-            Log.d("MovieDetailsViewModel", "MovieDetailsViewModel for movieId: $id and MovieDetails ${_state.value.movieDetails}")
         }
     }
 }

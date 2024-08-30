@@ -1,5 +1,6 @@
 package com.martin.myapplication.data.remote.model
 
+
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -10,7 +11,7 @@ data class MovieDetails(
     @Json(name = "backdrop_path")
     val backdropPath: String,
     @Json(name = "belongs_to_collection")
-    val belongsToCollection: BelongsToCollection,
+    val belongsToCollection: BelongsToCollection?,
     @Json(name = "budget")
     val budget: Int,
     @Json(name = "genres")
@@ -34,9 +35,9 @@ data class MovieDetails(
     @Json(name = "poster_path")
     val posterPath: String,
     @Json(name = "production_companies")
-    val productionCompanies: List<ProductionCompany>,
+    val productionCompanies: List<ProductionCompany>?,
     @Json(name = "production_countries")
-    val productionCountries: List<ProductionCountry>,
+    val productionCountries: List<ProductionCountry>?,
     @Json(name = "release_date")
     val releaseDate: String,
     @Json(name = "revenue")
@@ -44,7 +45,7 @@ data class MovieDetails(
     @Json(name = "runtime")
     val runtime: Int,
     @Json(name = "spoken_languages")
-    val spokenLanguages: List<SpokenLanguage>,
+    val spokenLanguages: List<SpokenLanguage>?,
     @Json(name = "status")
     val status: String,
     @Json(name = "tagline")
@@ -83,7 +84,7 @@ data class MovieDetails(
         @Json(name = "id")
         val id: Int,
         @Json(name = "logo_path")
-        val logoPath: String,
+        val logoPath: String?,
         @Json(name = "name")
         val name: String,
         @Json(name = "origin_country")

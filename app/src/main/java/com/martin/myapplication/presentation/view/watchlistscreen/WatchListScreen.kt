@@ -35,7 +35,7 @@ import com.martin.myapplication.R
 import com.martin.myapplication.presentation.ui.theme.BackgroundColor
 
 @Composable
-fun WatchListScreen() {
+fun WatchListScreen(goBack: () -> Unit) {
 //    var selectedIndex by remember { mutableStateOf(1) }
 //    val navController = rememberNavController()
 
@@ -56,7 +56,7 @@ fun WatchListScreen() {
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TopWatchListBar()
+                TopWatchListBar(goBack)
 
                 if(movieList.isEmpty()){
                     EmptyWatchList()
@@ -70,7 +70,7 @@ fun WatchListScreen() {
 }
 
 @Composable
-fun TopWatchListBar() {
+fun TopWatchListBar(goBack: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(24.dp)
@@ -86,7 +86,7 @@ fun TopWatchListBar() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { },
+                onClick = { goBack() },
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.arrow_left),
@@ -166,9 +166,9 @@ fun EmptyWatchListPreview() {
     EmptyWatchList()
 }
 
-@Preview
-@Composable
-fun WatchListScreenPreview(){
-    val navController = rememberNavController()
-    WatchListScreen()
-}
+//@Preview
+//@Composable
+//fun WatchListScreenPreview(){
+//    val navController = rememberNavController()
+//    WatchListScreen()
+//}

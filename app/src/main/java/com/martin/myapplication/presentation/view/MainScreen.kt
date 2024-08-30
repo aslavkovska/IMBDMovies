@@ -103,15 +103,15 @@ fun MainScreen() {
                     navController.navigate("details/$movieId")
                 })
             }
-            composable(BottomNavItem.Search.route) { SearchScreen() }
-            composable(BottomNavItem.WatchList.route) { WatchListScreen() }
+            composable(BottomNavItem.Search.route) { SearchScreen(goBack = { navController.navigateUp() }) }
+            composable(BottomNavItem.WatchList.route) { WatchListScreen(goBack = { navController.navigateUp() }) }
             composable(
                 "details/{movieId}",
                 arguments = listOf(navArgument("movieId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val movieId = backStackEntry.arguments?.getInt("movieId") ?: 0
                 Log.d("NavHost", "movieId: $movieId")
-                MovieDetailsPage(movieId)
+                MovieDetailsPage(goBack = { navController.navigateUp() }, movieId)
             }
         }
     }

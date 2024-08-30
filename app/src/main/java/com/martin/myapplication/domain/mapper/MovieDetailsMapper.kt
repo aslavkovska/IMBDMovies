@@ -31,6 +31,7 @@ fun MovieDetails.toMovieModel(): MovieDetailsModel {
         title = this.title,
         genres = this.genres,
         voteAverage = this.voteAverage,
-        runtime = this.runtime
+        runtime = this.runtime,
+        backdropPath = this.backdropPath
     )
 }

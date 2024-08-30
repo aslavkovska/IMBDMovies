@@ -133,7 +133,9 @@ fun HomeScreenPage(goToDetails: (Int) -> Unit) {
                         CenteredText()
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        MoviesRow(movies = topRatedMovies)
+                        MoviesRow(movies = topRatedMovies){ movieId ->
+                            goToDetails(movieId)
+                        }
 
                         Spacer(modifier = Modifier.height(30.dp))
 
@@ -151,7 +153,6 @@ fun HomeScreenPage(goToDetails: (Int) -> Unit) {
                                     else -> emptyList()
                                 }
                                     MoviesGrid(movies = movies){ movieId ->
-                                        Log.d("HomeScreenPage", "Navigating to details for movieId: $movieId")
                                         goToDetails(movieId)
                                     }
                             }
@@ -249,58 +250,61 @@ fun MoviePosterImage(
     )
 }
 
-@Composable
-fun MovieCardTop(posterPath: String,
-    number: String) {
-    Box(
-        modifier = Modifier
-            .width(164.61.dp)
-            .height(250.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .width(144.61.dp)
-                .height(210.dp)
-        ){
-            MoviePosterImage(
-                posterPath = posterPath,
-                modifier = Modifier
-                    .width(144.61.dp)
-                    .height(210.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(164.61.dp)
-                .height(250.dp)
-                .align(Alignment.BottomStart)
-                .background(Color.Transparent)
-        ) {
-            Text(
-                text = number,
-                color = Color(2, 150, 229, 255),
-                style = TextStyle(
-                    fontSize = 104.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-            )
-            Text(
-                text = number,
-                color = Color(36, 42, 50, 255),
-                style = TextStyle(
-                    fontSize = 96.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-            modifier = Modifier
-                .offset(x = 2.5.dp, y = -4.dp)
-                .align(Alignment.BottomStart))
-        }
-    }
-}
+//@Composable
+//fun MovieCardTop(posterPath: String,
+//    number: String,
+//    movieId: Int,
+//    onClick: (Int) -> Unit,) {
+//    Box(
+//        modifier = Modifier
+//            .width(164.61.dp)
+//            .height(250.dp)
+//    ) {
+//        Box(
+//            modifier = Modifier
+//                .align(Alignment.TopEnd)
+//                .width(144.61.dp)
+//                .height(210.dp)
+//                .clickable { onClick(movieId) }
+//        ){
+//            MoviePosterImage(
+//                posterPath = posterPath,
+//                modifier = Modifier
+//                    .width(144.61.dp)
+//                    .height(210.dp)
+//                    .clip(RoundedCornerShape(10.dp))
+//            )
+//        }
+//        Box(
+//            modifier = Modifier
+//                .width(164.61.dp)
+//                .height(250.dp)
+//                .align(Alignment.BottomStart)
+//                .background(Color.Transparent)
+//        ) {
+//            Text(
+//                text = number,
+//                color = Color(2, 150, 229, 255),
+//                style = TextStyle(
+//                    fontSize = 104.sp,
+//                    fontWeight = FontWeight.Bold
+//                ),
+//                modifier = Modifier
+//                    .align(Alignment.BottomStart)
+//            )
+//            Text(
+//                text = number,
+//                color = Color(36, 42, 50, 255),
+//                style = TextStyle(
+//                    fontSize = 96.sp,
+//                    fontWeight = FontWeight.Bold
+//                ),
+//            modifier = Modifier
+//                .offset(x = 2.5.dp, y = -4.dp)
+//                .align(Alignment.BottomStart))
+//        }
+//    }
+//}
 
 //@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 //@Composable
@@ -314,7 +318,8 @@ fun MovieCardTop(posterPath: String,
 @Composable
 fun MoviesRow(
     movies: List<Result>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (Int) -> Unit,
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(30.18.dp),
@@ -322,7 +327,55 @@ fun MoviesRow(
         modifier = modifier.background(color = Color(0x242A32))
     ) {
         items(movies) { movie ->
-            MovieCardTop(posterPath = movie.posterPath, number = "${movies.indexOf(movie)+1}")
+            Box(
+                modifier = Modifier
+                    .width(164.61.dp)
+                    .height(250.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .width(144.61.dp)
+                        .height(210.dp)
+                        .clickable { onClick(movie.id) }
+                ){
+                    MoviePosterImage(
+                        posterPath = movie.posterPath,
+                        modifier = Modifier
+                            .width(144.61.dp)
+                            .height(210.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .width(164.61.dp)
+                        .height(250.dp)
+                        .align(Alignment.BottomStart)
+                        .background(Color.Transparent)
+                ) {
+                    Text(
+                        text = "${movies.indexOf(movie)+1}",
+                        color = Color(2, 150, 229, 255),
+                        style = TextStyle(
+                            fontSize = 104.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                    )
+                    Text(
+                        text = "${movies.indexOf(movie)+1}",
+                        color = Color(36, 42, 50, 255),
+                        style = TextStyle(
+                            fontSize = 96.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier
+                            .offset(x = 2.5.dp, y = -4.dp)
+                            .align(Alignment.BottomStart))
+                }
+            }
         }
     }
 }

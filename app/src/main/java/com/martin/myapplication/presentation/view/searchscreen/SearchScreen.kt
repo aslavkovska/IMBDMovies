@@ -114,7 +114,7 @@ val movieList = listOf(
 )
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(goBack: () -> Unit) {
 
     Box(
         modifier = Modifier
@@ -133,7 +133,7 @@ fun SearchScreen() {
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TopSearchBar()
+                TopSearchBar(goBack)
 
                 SearchBar()
 
@@ -149,7 +149,7 @@ fun SearchScreen() {
 }
 
 @Composable
-fun TopSearchBar() {
+fun TopSearchBar(goBack: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(24.dp)
@@ -165,7 +165,7 @@ fun TopSearchBar() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { },
+                onClick = { goBack()},
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.arrow_left),
@@ -231,12 +231,12 @@ fun SearchBar(
     )
 }
 
-@Preview
-@Composable
-fun SearchBarPreview() {
-//    val navController = rememberNavController()
-    SearchScreen()
-}
+//@Preview
+//@Composable
+//fun SearchBarPreview() {
+////    val navController = rememberNavController()
+//    SearchScreen()
+//}
 
 @Composable
 fun MovieCard(movie: Movietmp) {
