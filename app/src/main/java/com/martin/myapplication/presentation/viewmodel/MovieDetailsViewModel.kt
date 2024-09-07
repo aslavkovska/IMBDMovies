@@ -1,15 +1,12 @@
 package com.martin.myapplication.presentation.viewmodel
 
-import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.martin.myapplication.data.remote.model.ErrorResponse
-import com.martin.myapplication.data.remote.model.MovieDetails
-import com.martin.myapplication.data.remote.repository.MovieDetailsRepository
+import com.martin.myapplication.data.remote.api.WatchlistRequest
+import com.martin.myapplication.domain.usecase.AddMovieToWatchlistUseCase
 import com.martin.myapplication.domain.usecase.MovieDetailsUseCase
 import com.martin.myapplication.domain.usecase.MovieReviewsUseCase
-import com.martin.myapplication.presentation.state.DetailsUiState
+import com.martin.myapplication.presentation.state.MovieDetailsUiState
 import com.slack.eithernet.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +18,31 @@ import javax.inject.Inject
 @HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
     private val getMovieDetails: MovieDetailsUseCase,
-    private val getMovieReviews: MovieReviewsUseCase
+    private val getMovieReviews: MovieReviewsUseCase,
+    private val addMovieToWatchlist: AddMovieToWatchlistUseCase,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(DetailsUiState())
-    val state: StateFlow<DetailsUiState> = _state
+    private val _state = MutableStateFlow(MovieDetailsUiState())
+    val state: StateFlow<MovieDetailsUiState> = _state
+
+    fun addMovie(id: Int, watchlistRequest: WatchlistRequest) {
+        viewModelScope.launch {
+            _state.update { uiState ->
+                uiState.copy(isAddedToWatchList = true)
+            }
+            addMovieToWatchlist(id, watchlistRequest).collect { result ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        println("Movie added to watchlist successfully: ${result.value}")
+                    }
+
+                    is ApiResult.Failure -> {
+                        println("Error adding movie to watchlist")
+                    }
+                }
+            }
+        }
+    }
 
     fun fetchMovieDetails(id: Int) {
         viewModelScope.launch {

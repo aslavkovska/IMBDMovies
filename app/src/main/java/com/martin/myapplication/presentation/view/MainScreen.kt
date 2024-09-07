@@ -33,7 +33,7 @@ import com.martin.myapplication.presentation.view.BottomNavItem.Companion.items
 import com.martin.myapplication.presentation.view.detailsscreen.MovieDetailsPage
 import com.martin.myapplication.presentation.view.homescreen.HomeScreenPage
 import com.martin.myapplication.presentation.view.searchscreen.SearchScreen
-import com.martin.myapplication.presentation.view.searchscreen.WatchListScreen
+import com.martin.myapplication.presentation.view.searchscreen.WatchListPage
 
 sealed class BottomNavItem(val route: String, val iconid: Int, val label: String) {
     object Home : BottomNavItem("home", R.drawable.home, "Home")
@@ -104,7 +104,7 @@ fun MainScreen() {
                 })
             }
             composable(BottomNavItem.Search.route) { SearchScreen(goBack = { navController.navigateUp() }) }
-            composable(BottomNavItem.WatchList.route) { WatchListScreen(goBack = { navController.navigateUp() }) }
+            composable(BottomNavItem.WatchList.route) { WatchListPage(goBack = { navController.navigateUp() }) }
             composable(
                 "details/{movieId}",
                 arguments = listOf(navArgument("movieId") { type = NavType.IntType })

@@ -1,6 +1,5 @@
 package com.martin.myapplication.presentation.view.searchscreen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,12 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,26 +30,34 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.martin.myapplication.R
 import com.martin.myapplication.presentation.ui.theme.BackgroundColor
+import com.martin.myapplication.presentation.viewmodel.SearchViewModel
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.martin.myapplication.domain.model.SearchMovieModel
+import com.martin.myapplication.presentation.state.SearchMoviesUiState
+import com.martin.myapplication.presentation.view.homescreen.MoviePosterImage
+import com.martin.myapplication.presentation.viewmodel.MovieDetailsViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class Movietmp(
     val title: String,
@@ -116,10 +124,21 @@ val movieList = listOf(
 @Composable
 fun SearchScreen(goBack: () -> Unit) {
 
+    val searchViewModel: SearchViewModel = hiltViewModel()
+    val searchState = searchViewModel.state.collectAsState()
+    val searchInput = searchViewModel.searchText.collectAsState()
+    val isSearching = searchViewModel.isSearching.collectAsState()
+
+//    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+//    val hasResults by remember {
+//        mutableStateOf(true)
+//    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundColor)
+//            .nestedScroll(scrollBehavior.nestedScrollConnection),
     ){
         Column(
             modifier = Modifier
@@ -135,14 +154,29 @@ fun SearchScreen(goBack: () -> Unit) {
 
                 TopSearchBar(goBack)
 
-                SearchBar()
+                SearchBar(searchInput, searchViewModel,searchState)
 
-                if(movieList.isEmpty()){
+                if (isSearching.value && searchInput.value != "") {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 30.dp),
+                        color = Color(0xFF0296E5)
+                    )
+                } else if (searchState.value.movies.isEmpty() && searchInput.value != "" && !isSearching.value) {
                     EmptySearch()
+                } else {
+                    MovieGrid(searchState.value.movies)
                 }
-                else{
-                    MovieGrid(movies = movieList)
-                }
+
+//                MovieGrid(movies = movieList)
+
+//                if(movieList.isEmpty()){
+//                    EmptySearch()
+//                }
+//                else{
+//
+//                }
             }
         }
     }
@@ -199,22 +233,33 @@ fun TopSearchBar(goBack: () -> Unit) {
 
 @Composable
 fun SearchBar(
+    searchInput: State<String>,
+    searchViewModel: SearchViewModel,
+    searchState: State<SearchMoviesUiState>,
     modifier: Modifier = Modifier
 ) {
+
+//    val coroutineScope = rememberCoroutineScope()
+//    var debounceJob: Job? by remember { mutableStateOf(null) }
+
     TextField(
-        value = "",
-        onValueChange = {},
+        value = searchInput.value,
         trailingIcon = {
-            Icon(
-                painter = painterResource(id = R.drawable.search2),
-                contentDescription = null,
-                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                tint = Color(0xFF67686D)
-            )
+            IconButton(onClick = {  searchViewModel.getMovieResults(searchInput.value) }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.search2),
+                    contentDescription = null,
+                    modifier = Modifier.size(AssistChipDefaults.IconSize),
+                    tint = Color(0xFF67686D)
+                )
+            }
         },
         colors = TextFieldDefaults.colors(
             unfocusedContainerColor = Color(0xFF3A3F47),
-            focusedContainerColor = Color(0xFF3A3F47)
+            focusedContainerColor = Color(0xFF3A3F47),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.Gray
         ),
         placeholder = {
             Text(
@@ -223,11 +268,34 @@ fun SearchBar(
                 color = Color(0xFF67686D)
             )
         },
+        onValueChange = {
+            searchViewModel.onSearchTextChange(it)
+            if (it.isEmpty()) {
+                searchViewModel.onEmptyInput()
+            }
+//            else{
+//                searchViewModel.getMovieResults(it)
+//            }
+        },
+//        onValueChange = { newValue ->
+//            searchViewModel.onSearchTextChange(newValue)
+//
+//            debounceJob?.cancel()
+//            debounceJob = coroutineScope.launch {
+//                if (newValue.isNotEmpty()) {
+//                    delay(300)
+//                    searchViewModel.getMovieResults(newValue)
+//                } else {
+//                    searchViewModel.onEmptyInput()
+//                }
+//            }
+//        },
+        singleLine = true,
         shape = MaterialTheme.shapes.medium.copy(all = CornerSize(16.dp)),
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 36.dp)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 24.dp),
     )
 }
 
@@ -239,7 +307,10 @@ fun SearchBar(
 //}
 
 @Composable
-fun MovieCard(movie: Movietmp) {
+fun MovieCard(movie: SearchMovieModel.Result) {
+    val movieDetailsViewModel: MovieDetailsViewModel = hiltViewModel()
+    val state = movieDetailsViewModel.state.collectAsState()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -252,10 +323,8 @@ fun MovieCard(movie: Movietmp) {
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Image(
-                painter = painterResource(id = movie.imageid),
-                contentDescription = null,
-                contentScale = ContentScale.FillBounds,
+            MoviePosterImage(
+                posterPath = movie.posterPath,
                 modifier = Modifier
                     .width(95.dp)
                     .height(120.dp)
@@ -267,7 +336,7 @@ fun MovieCard(movie: Movietmp) {
                     .padding(start = 8.dp)
             ) {
                 Text(
-                    text = movie.title,
+                    text = movie.originalTitle,
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 16.sp,
                     color = Color.White,
@@ -282,7 +351,7 @@ fun MovieCard(movie: Movietmp) {
                         tint = Color(0xFFFF8700)
                     )
                     Text(
-                        text = " ${movie.grade}",
+                        text = " ${movie.voteAverage.toString()}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 12.sp,
                         color = Color(0xFFFF8700),
@@ -296,8 +365,13 @@ fun MovieCard(movie: Movietmp) {
                         modifier = Modifier.size(AssistChipDefaults.IconSize),
                         tint = Color.White
                     )
+                    var genres: String = ""
+                    state.value.movieDetails?.genres?.get(movie.genreIds.get(1))?.name?.let {
+                        genres += "${it}, "
+                    }
                     Text(
-                        text = " ${movie.genre}",
+                        text = genres,
+//                        text = " ${movie.genreIds?.joinToString(separator = ", ")  ?: ""  }",
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 12.sp,
                         color = Color.White,
@@ -312,7 +386,7 @@ fun MovieCard(movie: Movietmp) {
                         tint = Color.White
                     )
                     Text(
-                        text = " ${movie.year}",
+                        text = " ${movie.releaseDate?.take(4) ?: ""}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 12.sp,
                         color = Color.White,
@@ -327,7 +401,7 @@ fun MovieCard(movie: Movietmp) {
                         tint = Color.White
                     )
                     Text(
-                        text = " ${movie.duration}",
+                        text = " 100 minutes",
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 12.sp,
                         color = Color.White,
@@ -340,18 +414,17 @@ fun MovieCard(movie: Movietmp) {
 }
 
 @Composable
-fun MovieGrid(movies: List<Movietmp>) {
-    Box(){
+fun MovieGrid(movies: List<SearchMovieModel.Result>) {
+    Box() {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            items(movies) { movie ->
-                MovieCard(movie = movie)
+            itemsIndexed(movies) { id, movie ->
+                MovieCard(movie)
             }
         }
     }
-
 }
 
 @Composable
@@ -397,14 +470,14 @@ fun EmptySearch(){
     }
 }
 
-@Preview
-@Composable
-fun PreviewErrorScreen() {
-    EmptySearch()
-}
-
-@Preview
-@Composable
-fun PreviewMovieCard() {
-    MovieCard(movieList.get(0))
-}
+//@Preview
+//@Composable
+//fun PreviewErrorScreen() {
+//    EmptySearch()
+//}
+//
+//@Preview
+//@Composable
+//fun PreviewMovieCard() {
+//    MovieCard(movieList.get(0))
+//}

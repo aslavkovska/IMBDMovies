@@ -77,6 +77,7 @@ import com.martin.myapplication.data.remote.model.TopRatedMovies
 import com.martin.myapplication.data.remote.model.UpcomingMovies
 import com.martin.myapplication.presentation.view.detailsscreen.DetailsScreen
 import com.martin.myapplication.presentation.view.detailsscreen.MovieDetailsPage
+import com.martin.myapplication.presentation.view.splashscreen.SplashScreen
 import com.martin.myapplication.presentation.viewmodel.HomeViewModel
 import com.slack.eithernet.ApiResult
 
@@ -115,10 +116,11 @@ fun HomeScreenPage(goToDetails: (Int) -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(16.dp)
-                )
+//                CircularProgressIndicator(
+//                    modifier = Modifier
+//                        .padding(16.dp)
+//                )
+                SplashScreen()
             }
             when (val resultTopRated = stateTopRated) {
                 is ApiResult.Success -> {
@@ -190,24 +192,6 @@ fun HomeScreenPage(goToDetails: (Int) -> Unit) {
                     )
                 }
             }
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                Spacer(modifier = Modifier.height(16.dp))
-//
-//                CenteredText()
-//                Spacer(modifier = Modifier.height(16.dp))
-//
-//                MoviesRow(movies = moviesList)
-//
-//                Spacer(modifier = Modifier.height(30.dp))
-//
-//                NavigationBar()
-//
-//                MoviesGrid(movies = moviesList)
-//            }
         }
     }
 }
@@ -383,10 +367,6 @@ fun MoviesRow(
 //@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 //@Composable
 //fun MoviesRowPreview() {
-////    val homeViewModel: HomeViewModel = viewModel()
-////
-////    val movies by homeViewModel.topRatedMovies.observeAsState()
-//
 //    MoviesRow(moviesList)
 //}
 

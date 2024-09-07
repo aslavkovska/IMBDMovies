@@ -5,7 +5,6 @@ import com.martin.myapplication.data.remote.model.ErrorResponse
 import com.martin.myapplication.data.remote.model.MovieDetails
 import com.martin.myapplication.data.remote.model.MovieReviews
 import com.slack.eithernet.ApiResult
-import retrofit2.http.Path
 import javax.inject.Inject
 
 class MovieDetailsRepository @Inject constructor(private val moviesApi: MoviesApi) {

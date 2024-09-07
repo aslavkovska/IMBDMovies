@@ -29,7 +29,6 @@ class MainActivity : ComponentActivity() {
 //                    bottomBar = { BottomNav() }
                 ) {
                     MainScreen()
-//                    HomeScreenPage()
                 }
             }
         }

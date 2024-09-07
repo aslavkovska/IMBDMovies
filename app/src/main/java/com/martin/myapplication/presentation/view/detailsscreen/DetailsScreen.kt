@@ -46,44 +46,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.martin.myapplication.R
-import com.martin.myapplication.presentation.state.DetailsUiState
+import com.martin.myapplication.presentation.state.MovieDetailsUiState
 import com.martin.myapplication.presentation.ui.theme.BackgroundColor
 import com.martin.myapplication.presentation.view.homescreen.MoviePosterImage
 import com.martin.myapplication.presentation.viewmodel.MovieDetailsViewModel
 import androidx.compose.runtime.State
+import com.martin.myapplication.data.remote.api.WatchlistRequest
 import com.martin.myapplication.data.remote.model.MovieReviews.AuthorDetails
-
-data class Review(
-    val imageId: Int,
-    val name: String,
-    val description: String,
-    val grade: Float
-)
+import com.martin.myapplication.presentation.viewmodel.WatchListMoviesViewModel
 
 data class Cast(
     val imageId: Int,
     val name: String
-)
-
-val reviewsList = listOf(
-    Review(
-        imageId = R.drawable.reviewperson,
-        name = "Alice Smith",
-        description = "From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government.",
-        grade = 8.5f
-    ),
-    Review(
-        imageId = R.drawable.reviewperson,
-        name = "Bob Johnson",
-        description = "From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government.",
-        grade = 7.5f
-    ),
-    Review(
-        imageId = R.drawable.reviewperson,
-        name = "Charlie Brown",
-        description = "From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government.",
-        grade = 9.0f
-    )
 )
 
 val castList = listOf(
@@ -100,17 +74,31 @@ val castList = listOf(
 fun MovieDetailsPage(goBack: () -> Unit, id: Int) {
     val movieDetailsViewModel: MovieDetailsViewModel = hiltViewModel()
     val movieDetailsState = movieDetailsViewModel.state.collectAsState()
+    val watchListViewModel: WatchListMoviesViewModel = hiltViewModel()
 
     LaunchedEffect(id) {
         movieDetailsViewModel.fetchMovieDetails(id)
     }
 
-    DetailsScreen(goBack, movieDetailsState)
+    LaunchedEffect(21456830) {
+        watchListViewModel.fetchMoviesFromWatchList(21456830)
+    }
+
+    DetailsScreen(goBack, movieDetailsState, id, movieDetailsViewModel, watchListViewModel)
 }
 
 @Composable
-fun DetailsScreen(goBack: () -> Unit, state: State<DetailsUiState>){
+fun DetailsScreen(goBack: () -> Unit,
+                  state: State<MovieDetailsUiState>,
+                  id: Int,
+                  movieDetailsViewModel: MovieDetailsViewModel,
+                  watchListViewModel: WatchListMoviesViewModel,){
     var selectedIndex by remember { mutableStateOf(0) }
+    val watchlistRequest = WatchlistRequest(
+        media_type = "movie",
+        media_id = id,
+        watchlist = true
+    )
 
     Box(
         modifier = Modifier
@@ -129,7 +117,7 @@ fun DetailsScreen(goBack: () -> Unit, state: State<DetailsUiState>){
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                TopDetailsBar(goBack)
+                TopDetailsBar(goBack, id, state, movieDetailsViewModel, watchlistRequest, watchListViewModel)
 
                 TopMovieCard(state)
 
@@ -158,7 +146,12 @@ fun DetailsScreen(goBack: () -> Unit, state: State<DetailsUiState>){
 //}
 
 @Composable
-fun TopDetailsBar(goBack: () -> Unit) {
+fun TopDetailsBar(goBack: () -> Unit,
+                  id: Int,
+                  state: State<MovieDetailsUiState>,
+                  movieDetailsViewModel: MovieDetailsViewModel,
+                  watchlistRequest : WatchlistRequest,
+                  watchListViewModel: WatchListMoviesViewModel,) {
     Box(
         modifier = Modifier
             .padding(24.dp)
@@ -193,10 +186,18 @@ fun TopDetailsBar(goBack: () -> Unit) {
             )
 
             IconButton(
-                onClick = { },
+                onClick = {
+                    movieDetailsViewModel.addMovie(21456830, watchlistRequest)
+                },
             ) {
+                val watchListMovies = watchListViewModel.state.collectAsState().value.movies
                 Icon(
-                    painter = painterResource(id = R.drawable.save),
+                    painter = painterResource(
+                        if (watchListMovies.any { it.id == id } || state.value.isAddedToWatchList)
+                            R.drawable.save
+                        else
+                            R.drawable.watchlist
+                    ),
                     contentDescription = "Right Icon",
                     modifier = Modifier.size(AssistChipDefaults.IconSize),
                     tint = Color.White
@@ -213,7 +214,7 @@ fun TopDetailsBar(goBack: () -> Unit) {
 //}
 
 @Composable
-fun TopMovieCard(state: State<DetailsUiState>){
+fun TopMovieCard(state: State<MovieDetailsUiState>){
     Box(modifier = Modifier
         .height(271.dp)
         .fillMaxWidth()
@@ -288,7 +289,7 @@ fun TopMovieCard(state: State<DetailsUiState>){
 //}
 
 @Composable
-fun DetailsLine(state: State<DetailsUiState>) {
+fun DetailsLine(state: State<MovieDetailsUiState>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -321,7 +322,8 @@ fun DetailsLine(state: State<DetailsUiState>) {
             )
             DetailsLineItem(
                 iconRes = R.drawable.genre,
-                text = state.value.movieDetails?.genres?.joinToString(separator = ", ") { it.name }  ?: ""            )
+                text = state.value.movieDetails?.genres?.joinToString(separator = ", ") { it.name }  ?: ""
+            )
         }
     }
 }
@@ -408,7 +410,7 @@ fun NavBarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
 //}
 
 @Composable
-fun AboutMovie(state: State<DetailsUiState>){
+fun AboutMovie(state: State<MovieDetailsUiState>){
     Box(modifier = Modifier
         .width(317.dp)
         .padding(top = 18.dp, bottom = 10.dp)){
@@ -423,66 +425,6 @@ fun AboutMovie(state: State<DetailsUiState>){
 //@Composable
 //fun AboutMoviePreview() {
 //    AboutMovie()
-//}
-
-//@Composable
-//fun ReviewItem(
-//    review: Review,
-//    modifier: Modifier = Modifier
-//) {
-//    Surface(
-//        shape = MaterialTheme.shapes.medium,
-//        modifier = modifier.background(color = BackgroundColor)
-//    ) {
-//        Row(
-//            verticalAlignment = Alignment.CenterVertically,
-//            modifier = Modifier
-//                .background(color = BackgroundColor)
-//                .height(120.dp)
-//                .width(371.dp)
-//        ) {
-//            Box(modifier = Modifier.width(44.dp)){
-//                Image(
-//                    painter = painterResource(review.imageId),
-//                    contentDescription = null,
-//                    contentScale = ContentScale.FillBounds,
-//                    modifier = Modifier
-//                        .width(44.dp)
-//                        .height(44.dp)
-//                        .clip(CircleShape)
-//                )
-//                Box(modifier = Modifier
-//                    .align(alignment = Alignment.BottomCenter)
-//                    .padding(top = 44.dp)){
-//                    Text(
-//                        text = "${review.grade}",
-//                        fontSize = 12.sp,
-//                        color = Color(0xFF0296E5),
-//                        textAlign = TextAlign.Center,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//            Box(modifier = Modifier.padding(start = 10.dp)){
-//                Box{
-//                    Text(
-//                        text = "${review.name}",
-//                        fontSize = 12.sp,
-//                        fontWeight = FontWeight.Bold,
-//                        color = Color.White,
-//                        modifier = Modifier.padding(bottom = 10.dp)
-//                    )
-//                }
-//                Box (){
-//                    Text(
-//                        text = "${review.description}",
-//                        fontSize = 12.sp,
-//                        color = Color.White,
-//                    )
-//                }
-//            }
-//        }
-//    }
 //}
 
 @Composable
@@ -564,8 +506,6 @@ fun ReviewItem(
     }
 }
 
-
-
 //@Preview(showBackground = true, backgroundColor = 0xFFF5F0EE)
 //@Composable
 //fun ReviewItemPreview() {
@@ -576,7 +516,7 @@ fun ReviewItem(
 
 @Composable
 fun ReviewsGrid(
-    state: State<DetailsUiState>,
+    state: State<MovieDetailsUiState>,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -603,9 +543,6 @@ fun ReviewsGrid(
                         ReviewItem(authorDetails = item.authorDetails, content = item.content, author = item.author?:"")
                     }
                 }
-//                items(state.value.movieReviews.results) { item ->
-//                    ReviewItem(authorDetails = item.authorDetails, content = item.content)
-//                }
             }
         }
     }
@@ -624,7 +561,6 @@ fun CastItem(cast: Cast) {
             .width(120.dp)
             .height(125.dp)
             .background(color = BackgroundColor)
-//            .padding(4.dp) // Optional padding inside the box
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -1,11 +1,15 @@
 package com.martin.myapplication.data.remote.repository
 
 import com.martin.myapplication.data.remote.api.MoviesApi
+import com.martin.myapplication.data.remote.api.WatchlistRequest
 import com.martin.myapplication.data.remote.model.ErrorResponse
 import com.martin.myapplication.data.remote.model.NowPlayingMovies
 import com.martin.myapplication.data.remote.model.PopularMovies
+import com.martin.myapplication.data.remote.model.SearchMovie
 import com.martin.myapplication.data.remote.model.TopRatedMovies
 import com.martin.myapplication.data.remote.model.UpcomingMovies
+import com.martin.myapplication.data.remote.model.WatchListMovies
+import com.martin.myapplication.data.remote.model.WatchlistResponse
 import com.slack.eithernet.ApiResult
 import javax.inject.Inject
 
@@ -73,31 +77,56 @@ class MoviesRepository  @Inject constructor(private val moviesApi: MoviesApi) {
         }
         return result
     }
+
+    suspend fun getSearchedMovies(input: String): ApiResult<SearchMovie, ErrorResponse> {
+        val result = moviesApi.getSearchedMovies(input)
+
+        when (result) {
+            is ApiResult.Success -> {
+                val movies = result.value.results
+                println("Fetched Movies from search $input: $movies")
+            }
+
+            is ApiResult.Failure -> {
+                println("Error fetching movie")
+            }
+        }
+        return result
+    }
+
+    suspend fun addMovieToWatchlist(
+        id: Int,
+        watchlistRequest: WatchlistRequest,
+    ): ApiResult<WatchlistResponse, ErrorResponse> {
+        val result = moviesApi.addMovieToWatchList(id, watchlistRequest)
+
+        when (result) {
+            is ApiResult.Success -> {
+                println("Movie added to watchlist successfully: ${result.value}")
+            }
+
+            is ApiResult.Failure -> {
+                println("Error adding movie to watchlist")
+            }
+        }
+        return result
+    }
+
+    suspend fun getWatchListMovies(
+        id: Int,
+    ): ApiResult<WatchListMovies, ErrorResponse> {
+        val result = moviesApi.getWatchListMovies(id)
+
+        when (result) {
+            is ApiResult.Success -> {
+                println("Watch List Movies: ${result.value}")
+            }
+
+            is ApiResult.Failure -> {
+                println("Error adding movie to watchlist")
+            }
+        }
+        return result
+    }
 }
 
-//class MoviesRepository @Inject constructor(private val moviesApi: MoviesApi) {
-//
-//    suspend fun getTopRatedMovies(): ApiResult<TopRatedMovies, ErrorResultResponse> {
-//        val result = moviesApi.getTopRatedMovies(language = "en-US", page = 1)
-//
-//        when (result) {
-//            is ApiResult.Success -> {
-//                // Log the success response
-//                val movies = result.value.results
-//                Log.d("MoviesRepository", "Fetched Movies: $movies")
-//            }
-//
-//            is ApiResult.Failure -> {
-//                // Log the failure error
-//                when (result) {
-//                    is ApiResult.Failure.NetworkFailure -> Log.e("MoviesRepository", "Network Failure")
-//                    is ApiResult.Failure.HttpFailure -> Log.e("MoviesRepository", "HTTP Failure")
-//                    is ApiResult.Failure.ApiFailure -> Log.e("MoviesRepository", "API Failure")
-//                    is ApiResult.Failure.UnknownFailure -> Log.e("MoviesRepository", "Unknown Failure")
-//                }
-//            }
-//        }
-//
-//        return result
-//    }
-//}
